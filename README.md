@@ -66,11 +66,11 @@ omnihub search "database decisions"
 ---
 
 ## Usage: Connecting to AI (MCP)
-You can plug this server into any MCP-compatible client. 
+You can plug this server into any MCP-compatible client 
 
 **Example: Connecting to Claude Code (Terminal)**
 \`\`\`bash
-# Run this from inside your cloned omnihub directory:
+Run this from inside your cloned omnihub directory:
 claude mcp add omnihub --transport stdio "bun run $(pwd)/apps/mcp-server/index.ts"
 \`\`\`
 
