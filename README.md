@@ -44,15 +44,43 @@ cp .env.example .env
 ---
 
 ### Installation
-You can install Omnihub globally using Bun:
+##  Installation & Setup
+
+Omnihub is available on npm. Install it globally so you can access your second brain from any directory on your machine:
+
 ```bash
-bun install -g omnihub-cli
+npm install -g omnihub-cli
 ```
 
-Alternatively, run it instantly without installing:
+### Authentication
+
+Omnihub is powered by the Gemini API. You only need to set your API key once. Run the following command and paste your key (get one for free at [aistudio.google.com](https://aistudio.google.com/)):
+
 ```bash
-bunx omnihub-cli log "Just set up my personal memory hub!"
+omnihub login
 ```
+
+Your key is securely saved locally to `~/.omnihub/config.json`. You will never need to mess with `.env` files, and Omnihub will automatically authenticate no matter what folder you are working in.
+
+##  Usage
+
+Once logged in, you can start logging and searching your memories instantly.
+
+**Log a memory directly:**
+```bash
+omnihub log "Just discovered a great way to handle global CLI configs in Node.js"
+```
+
+**Open your default editor for multi-line logs:**
+```bash
+omnihub log
+```
+
+**Search your memories:**
+```bash
+omnihub search "CLI config"
+```
+
 
 
 ## Customizing It For Yourself
@@ -62,33 +90,6 @@ You can modify the `categories` array to fit your workflow.
 *   **Software Engineers:** `["architecture", "bug_fix", "tech_stack"]`
 *   **Designers:** `["inspiration", "feedback", "typography"]`
 *   **Founders:** `["product_idea", "user_feedback", "marketing"]`
-
----
-
-## Usage: The CLI
-
-**1. The Deep-Dive Editor Mode:**
-Run `omnihub log` with no arguments. It will clear your terminal and open your default `$EDITOR` (Nano/Vim/VS Code). Type out your multi-paragraph logic, save, and close. Omnihub handles the rest.
-```bash
-omnihub log
-```
-
-**2. The Quick Inline Log:**
-Just pass a string. The AI will automatically read it, guess the correct category based on your config, generate the embedding, and save it.
-```bash
-omnihub log "Just swapped out Postgres for a pure JSON file to keep this tool portable."
-```
-
-**3. The Manual Override:**
-If you want to bypass the AI categorization, use the `-c` flag.
-```bash
-omnihub log -c bug_fix "Fixed a nasty race condition in the cache layer."
-```
-
-**4. Search manually:**
-```bash
-omnihub search "database decisions"
-```
 
 ---
 
