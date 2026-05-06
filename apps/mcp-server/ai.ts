@@ -9,6 +9,35 @@ if (!existsSync(CONFIG.dataFile)) {
   writeFileSync(CONFIG.dataFile, JSON.stringify([]));
 }
 
+export async function autoCategorize(content: string): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  
+  const prompt = `
+    You are an AI classifier for a developer's knowledge base. 
+    Categorize the following log entry into EXACTLY ONE of the following categories:
+    ${CONFIG.categories.join(', ')}
+
+    Rules:
+    1. Return ONLY the exact category name. No quotes, no markdown, no extra text.
+    2. If it doesn't perfectly fit, pick the closest match.
+
+    Log entry:
+    "${content}"
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const category = result.response.text().trim();
+    if (CONFIG.categories.includes(category)) {
+      return category;
+    }
+    return CONFIG.categories[0] ?? 'Uncategorized'; // fallback to default if categories is empty
+  } catch (error) {
+    console.error("Auto-categorization failed, falling back to default.", error);
+    return CONFIG.categories[0] ?? 'Uncategorized';
+  }
+}
+
 export async function addMemory(category: string, content: string) {
   const model = genAI.getGenerativeModel({ model: CONFIG.embeddingModel });
   const result = await model.embedContent(content);
