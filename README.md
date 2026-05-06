@@ -43,6 +43,18 @@ cp .env.example .env
 
 ---
 
+### Installation
+You can install Omnihub globally using Bun:
+```bash
+bun install -g omnihub-cli
+```
+
+Alternatively, run it instantly without installing:
+```bash
+bunx omnihub-cli log "Just set up my personal memory hub!"
+```
+
+
 ## Customizing It For Yourself
 This tool is designed to be personalized. Open `apps/config.ts` to make it your own!
 
@@ -98,6 +110,8 @@ Your data is strictly yours.
 *   Memories are saved locally to `memories.json` in the root folder.
 *   `memories.json` is automatically ignored in `.gitignore`.
 *   **Never commit your `.env` or `memories.json` file to a public repository!**
+
+[![npm version](https://badge.fury.io/js/omnihub-cli.svg)](https://www.npmjs.com/package/omnihub-cli)
 
 ## License
 MIT License. Feel free to fork it, change it, and make it yours!
