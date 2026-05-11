@@ -53,7 +53,7 @@ program.command('login')
 
     rl.question('🔑 Enter your Gemini API Key (get one at aistudio.google.com): ', (key) => {
       if (key.trim()) {
-        saveApiKey(key.trim());
+        saveApiKey(key.trim(), 'gemini');
         console.log('✅ API Key saved securely to ~/.omnihub/config.json');
       } else {
         console.log('❌ No key provided.');
