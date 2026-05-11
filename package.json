@@ -1,6 +1,6 @@
 {
   "name": "omnihub-cli",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/malharrrr/omnihub.git"
@@ -13,7 +13,8 @@
     "apps"
   ],
   "scripts": {
-    "start": "bun run ./apps/cli/index.ts"
+    "start": "bun run ./apps/cli/index.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -22,9 +23,17 @@
     "cosine-similarity": "^1.0.1"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
   },
-  "keywords": ["mcp", "ai", "rag", "second-brain", "bun", "cli"],
-  "author": "Your Name",
+  "keywords": [
+    "mcp",
+    "ai",
+    "rag",
+    "second-brain",
+    "bun",
+    "cli"
+  ],
+  "author": "Malhar Bonde",
   "license": "MIT"
 }
