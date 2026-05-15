@@ -8,6 +8,8 @@
   <strong>A zero-infrastructure MCP server and CLI for your AI second brain.</strong>
 </p>
 
+[![npm package](https://img.shields.io/npm/v/omnihub-cli?color=CB3837&style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/omnihub-cli)
+
 OmniHub is a lightweight, local memory system that gives your AI assistants (Claude, Gemini, etc.) access to your personal knowledge history — decisions, ideas, milestones, notes — through semantic search over the Model Context Protocol (MCP). No database to provision, no container to run. Just a JSON file and a fast CLI.
 
 ---
