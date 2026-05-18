@@ -1,28 +1,27 @@
 #!/usr/bin/env bun
 import { Command } from 'commander';
 import { spawnSync } from 'node:child_process';
-import { writeFileSync, readFileSync, unlinkSync } from 'node:fs';
+import { writeFileSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import * as readline from 'node:readline';
 import { addMemory, searchMemories, autoCategorize } from '../mcp-server/ai.js';
-import { CONFIG, getApiKey, saveApiKey } from '../config.js';
+import { CONFIG } from '../config.js';
+import { loadMemories } from '../mcp-server/storage.js';
 
 const program = new Command();
 
 program
   .name('omnihub')
-  .description('CLI to manage your personal memory hub');
+  .description('CLI to manage your personal, local-first memory hub');
 
-// ensure the user has an api key set up first
-function requireAuth() {
-  const key = getApiKey();
-  if (!key) {
-    console.error('❌ You need to set your Gemini API key first!');
-    console.error('👉 Run: omnihub login');
+function checkVectorDimensions() {
+  const memories = loadMemories();
+  if (memories.length > 0 && memories[0].embedding && memories[0].embedding.length !== 384) {
+    console.error('\n❌ FATAL: Legacy high-dimensional vectors detected.');
+    console.error('OmniHub has upgraded to a blazing fast, completely offline AI engine (384-dim).');
+    console.error('👉 Please run: omnihub reset\n(Note: This will delete your old cloud-based memories to ensure stability.)\n');
     process.exit(1);
   }
-  process.env.GEMINI_API_KEY = key;
 }
 
 function getEditorContent(): string {
@@ -43,24 +42,19 @@ function getEditorContent(): string {
   return finalContent;
 }
 
-program.command('login')
-  .description('Set up your Gemini API key')
+program.command('reset')
+  .description('Wipe your legacy database to migrate to the new local AI engine')
   .action(() => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    rl.question('🔑 Enter your Gemini API Key (get one at aistudio.google.com): ', (key) => {
-      if (key.trim()) {
-        saveApiKey(key.trim(), 'gemini');
-        console.log('✅ API Key saved securely to ~/.omnihub/config.json');
-      } else {
-        console.log('❌ No key provided.');
-      }
-      rl.close();
-      process.exit(0);
-    });
+    if (existsSync(CONFIG.dataFile)) {
+      unlinkSync(CONFIG.dataFile);
+      console.log('✅ Legacy database wiped. You are ready to use the new local engine!');
+    } else {
+      console.log('✅ Database is already clean.');
+    }
+    const backupPath = CONFIG.dataFile.replace('.json', '.backup.json');
+    if (existsSync(backupPath)) unlinkSync(backupPath);
+    
+    process.exit(0);
   });
 
 program.command('log')
@@ -68,7 +62,7 @@ program.command('log')
   .option('-c, --category <type>', `Category: ${CONFIG.categories.join(', ')}`)
   .argument('[content]', 'The actual note or context')
   .action(async (content, options) => {
-    requireAuth(); // no api key found then exit
+    checkVectorDimensions();
 
     let finalContent = content;
     if (!finalContent) {
@@ -81,7 +75,7 @@ program.command('log')
 
     let category = options.category;
     if (!category) {
-      process.stdout.write('🤖 Auto-categorizing... ');
+      process.stdout.write('🤖 Auto-categorizing locally... ');
       category = await autoCategorize(finalContent);
       console.log(`[${category}]`);
     } else if (!CONFIG.categories.includes(category)) {
@@ -89,7 +83,7 @@ program.command('log')
       process.exit(1);
     }
 
-    console.log('Generating embedding and saving...');
+    console.log('Generating local embedding and saving...');
     await addMemory(category, finalContent);
     console.log('✅ Saved successfully.');
     process.exit(0);
@@ -99,7 +93,7 @@ program.command('search')
   .description('Semantic search your memories')
   .argument('<query>', 'What are you looking for?')
   .action(async (query) => {
-    requireAuth();
+    checkVectorDimensions();
     
     console.log(`Searching for: "${query}"...`);
     const results = await searchMemories(query);

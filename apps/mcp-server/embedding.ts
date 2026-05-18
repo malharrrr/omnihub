@@ -1,50 +1,37 @@
-import { getApiKey, getProvider, CONFIG } from '../config.js';
+import { env, pipeline } from '@huggingface/transformers';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 
 export interface EmbeddingProvider {
   embed(text: string): Promise<number[]>;
 }
 
-class GeminiProvider implements EmbeddingProvider {
-  async embed(text: string): Promise<number[]> {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const ai = new GoogleGenerativeAI(getApiKey('gemini'));
-    const model = ai.getGenerativeModel({ model: CONFIG.defaultEmbeddingModel });
-    const result = await model.embedContent(text);
-    return result.embedding.values as number[];
+class LocalProvider implements EmbeddingProvider {
+  private extractorInstance: any = null;
+
+  constructor() {
+    env.cacheDir = join(homedir(), '.omnihub', 'models');
   }
-}
 
-class OpenAIProvider implements EmbeddingProvider {
-  async embed(text: string): Promise<number[]> {
-    const response = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getApiKey('openai')}`,
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: text,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`OpenAI embedding failed (${response.status}): ${err}`);
+  private async getExtractor() {
+    if (!this.extractorInstance) {
+      this.extractorInstance = await pipeline(
+        'feature-extraction',
+        'onnx-community/all-MiniLM-L6-v2-ONNX',
+        { dtype: 'q4' }
+      );
     }
+    return this.extractorInstance;
+  }
 
-    const data = (await response.json()) as { data: { embedding: number[] }[] };
-    return data.data[0].embedding;
+  async embed(text: string): Promise<number[]> {
+    const extractor = await this.getExtractor();
+    const output = await extractor(text, { pooling: 'mean', normalize: true });
+    return Array.from(output.data) as number[];
   }
 }
 
 export function getEmbeddingProvider(): EmbeddingProvider {
-  const provider = getProvider();
-  switch (provider) {
-    case 'openai':
-      return new OpenAIProvider();
-    case 'gemini':
-    default:
-      return new GeminiProvider();
-  }
+  // switched to strictly return the local model provider, bypassing cloud APIs for embeddings
+  return new LocalProvider();
 }

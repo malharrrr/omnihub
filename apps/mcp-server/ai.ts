@@ -24,72 +24,39 @@ export function validateCategory(category: string): void {
 
 //auto categorize function
 export async function autoCategorize(content: string): Promise<string> {
-  const provider = getProvider();
-
-  if (provider === 'openai') {
-    return autoCategorizeOpenAI(content);
-  }
-  return autoCategorizeGemini(content);
-}
-
-async function autoCategorizeGemini(content: string): Promise<string> {
-  const { GoogleGenerativeAI } = await import('@google/generative-ai');
-  const ai = new GoogleGenerativeAI(getApiKey('gemini'));
-  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  const prompt = buildCategorizationPrompt(content);
-
-  try {
-    const result = await model.generateContent(prompt);
-    const category = result.response.text().trim();
-    return CONFIG.categories.includes(category)
-      ? category
-      : CONFIG.categories[0];
-  } catch (error) {
-    throw new Error(
-      `Auto-categorization failed: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
-
-async function autoCategorizeOpenAI(content: string): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getApiKey('openai')}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: buildCategorizationPrompt(content) }],
-      temperature: 0,
-      max_tokens: 32,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`OpenAI categorization failed (${response.status}): ${err}`);
-  }
-
-  const data = (await response.json()) as {
-    choices: { message: { content: string } }[];
+  const contentLower = content.toLowerCase();
+  
+  // local keyword mapping for your categories, feel free to change it as per your use case
+  const heuristics: Record<string, string[]> = {
+    bug_fix: ['bug', 'fix', 'error', 'crash', 'exception', 'issue', 'fail', 'broken', 'patch'],
+    tech_stack: ['react', 'node', 'npm', 'bun', 'docker', 'typescript', 'python', 'sql', 'db', 'database', 'library', 'package', 'framework'],
+    architecture: ['architecture', 'system', 'pattern', 'design', 'api', 'endpoint', 'infrastructure', 'auth', 'schema', 'routing'],
+    meeting_notes: ['meeting', 'discussed', 'team', 'sync', 'client', 'standup', 'call', 'agreed', 'manager'],
   };
-  const category = data.choices[0]?.message?.content?.trim() ?? '';
-  return CONFIG.categories.includes(category) ? category : CONFIG.categories[0];
-}
 
-function buildCategorizationPrompt(content: string): string {
-  return `You are an AI classifier for a developer's knowledge base.
-Categorize the following log entry into EXACTLY ONE of these categories:
-${CONFIG.categories.join(', ')}
+  const scores: Record<string, number> = {};
+  for (const cat of CONFIG.categories) scores[cat] = 0;
 
-Rules:
-1. Return ONLY the exact category name. No quotes, no markdown, no extra text.
-2. If it doesn't perfectly fit, pick the closest match.
+  const words = contentLower.match(/\b\w{3,}\b/g) || [];
 
-Log entry:
-"${content}"`;
+  for (const word of words) {
+    for (const [category, keywords] of Object.entries(heuristics)) {
+      if (keywords.includes(word)) {
+        scores[category] += 1;
+      }
+    }
+  }
+  let bestCategory = 'idea'; 
+  let maxScore = 0;
+
+  for (const [category, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      bestCategory = category;
+    }
+  }
+
+  return bestCategory;
 }
 // add memory function
 export async function addMemory(category: string, content: string): Promise<string> {
