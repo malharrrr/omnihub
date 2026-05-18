@@ -1,5 +1,5 @@
 import cosineSimilarity from 'cosine-similarity';
-import { CONFIG, getApiKey, getProvider } from '../config.js';
+import { CONFIG } from '../config.js';
 import { getEmbeddingProvider } from './embedding.js';
 import {loadMemories, addMemoryRecord, updateMemoryRecord, type Memory} from './storage.js';
 
